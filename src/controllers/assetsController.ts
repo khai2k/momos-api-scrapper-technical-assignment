@@ -8,6 +8,7 @@ export const getAllAssets = async (req: Request, res: Response, next: NextFuncti
     const limit = parseInt(req.query.limit as string) || 10;
     const type = req.query.type as string; // 'image' or 'video'
     const search = req.query.search as string; // search in alt_text or asset_url
+    const scrapedPageId = req.query.scrapedPageId as string;
     const sortBy = req.query.sortBy as string || 'created_at';
     const sortOrder = req.query.sortOrder as string || 'DESC';
 
@@ -16,6 +17,7 @@ export const getAllAssets = async (req: Request, res: Response, next: NextFuncti
       limit,
       type,
       search,
+      scrapedPageId,
       sortBy,
       sortOrder: sortOrder as 'ASC' | 'DESC'
     });

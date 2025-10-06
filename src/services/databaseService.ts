@@ -80,10 +80,11 @@ export class DatabaseService {
     limit: number;
     type?: string;
     search?: string;
+    scrapedPageId?: string;
     sortBy?: string;
     sortOrder?: 'ASC' | 'DESC';
   }): Promise<{ assets: ScrapedAsset[]; total: number }> {
-    const { page, limit, type, search, sortBy = 'created_at', sortOrder = 'DESC' } = options;
+    const { page, limit, type, search, scrapedPageId, sortBy = 'created_at', sortOrder = 'DESC' } = options;
     const skip = (page - 1) * limit;
 
     const queryBuilder = this.scrapedAssetRepository
@@ -95,6 +96,10 @@ export class DatabaseService {
     // Apply filters
     if (type) {
       queryBuilder.andWhere('asset.asset_type = :type', { type });
+    }
+
+    if (scrapedPageId) {
+      queryBuilder.andWhere('asset.scraped_page_id = :scrapedPageId', { scrapedPageId });
     }
 
     if (search) {

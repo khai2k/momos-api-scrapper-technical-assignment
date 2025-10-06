@@ -14,4 +14,6 @@ export const AppDataSource = new DataSource({
   entities: [ScrapedPage, ScrapedAsset],
   migrations: ['src/database/migrations/*.ts'],
   subscribers: ['src/database/subscribers/*.ts'],
+  migrationsTableName: 'migrations',
+  migrationsRun: false,
 });
