@@ -4,8 +4,8 @@ import scrapingService from '../services/scrapingService';
 import { scrapeResponseSchema } from '../validators/schemas';
 import { ScrapeResponse } from '../types';
 
-// Scrape media from multiple URLs
-export const scrapeMedia = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+// Scrape asset from multiple URLs
+export const scrapeAsset = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { urls } = req.body;
     const results = await scrapingService.scrapeMultipleUrls(urls);

@@ -7,6 +7,9 @@ import morgan from 'morgan';
 import config from './src/config';
 import logger from './src/utils/logger';
 
+// Import database
+import { initializeDatabase, closeDatabase } from './src/database';
+
 // Import middleware
 import { errorHandler, notFoundHandler } from './src/middleware/errorHandler';
 
@@ -71,7 +74,8 @@ app.get('/', (req: Request, res: Response) => {
     version: '1.0.0',
     endpoints: {
       health: 'GET /api/health',
-      scrape: 'POST /api/scrape'
+      scrape: 'POST /api/scrape',
+      assets: 'GET /api/assets'
     },
     documentation: 'See README.md for usage instructions'
   });
@@ -81,33 +85,50 @@ app.get('/', (req: Request, res: Response) => {
 app.use(notFoundHandler);
 app.use(errorHandler);
 
-// Start server
-const server = app.listen(config.port, () => {
-  logger.info('Server started successfully', {
-    port: config.port,
-    environment: process.env.NODE_ENV || 'development',
-    endpoints: {
-      health: `http://localhost:${config.port}/api/health`,
-      scrape: `http://localhost:${config.port}/api/scrape`
-    }
-  });
-});
+// Initialize database and start server
+const startServer = async () => {
+  try {
+    // Initialize database connection
+    await initializeDatabase();
+    
+    // Start server
+    const server = app.listen(config.port, () => {
+      logger.info('Server started successfully', {
+        port: config.port,
+        environment: process.env.NODE_ENV || 'development',
+        endpoints: {
+          health: `http://localhost:${config.port}/api/health`,
+          scrape: `http://localhost:${config.port}/api/scrape`,
+          assets: `http://localhost:${config.port}/api/assets`
+        }
+      });
+    });
 
-// Graceful shutdown
-process.on('SIGTERM', () => {
-  logger.info('SIGTERM received, shutting down gracefully');
-  server.close(() => {
-    logger.info('Process terminated');
-    process.exit(0);
-  });
-});
+    // Graceful shutdown
+    const gracefulShutdown = async () => {
+      logger.info('Shutting down gracefully...');
+      server.close(async () => {
+        try {
+          await closeDatabase();
+          logger.info('Database connection closed');
+          process.exit(0);
+        } catch (error) {
+          logger.error('Error closing database connection:', error as Record<string, any>);
+          process.exit(1);
+        }
+      });
+    };
 
-process.on('SIGINT', () => {
-  logger.info('SIGINT received, shutting down gracefully');
-  server.close(() => {
-    logger.info('Process terminated');
-    process.exit(0);
-  });
-});
+    process.on('SIGTERM', gracefulShutdown);
+    process.on('SIGINT', gracefulShutdown);
+
+  } catch (error) {
+    logger.error('Failed to start server:', error as Record<string, any>);
+    process.exit(1);
+  }
+};
+
+// Start the application
+startServer();
 
 export default app;

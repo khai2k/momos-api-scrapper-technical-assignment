@@ -1,8 +1,9 @@
 import axios, { AxiosResponse } from 'axios';
 import * as cheerio from 'cheerio';
 import { ImageData, VideoData, ScrapedData, ScrapeResult } from '../types';
+import { databaseService } from './databaseService';
 
-// Scraping service for extracting media from web pages
+// Scraping service for extracting asset from web pages
 class ScrapingService {
   private timeout: number;
   private userAgent: string;
@@ -12,8 +13,8 @@ class ScrapingService {
     this.userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36';
   }
 
-  // Scrape media (images and videos) from a URL
-  async scrapeMedia(url: string): Promise<ScrapedData> {
+  // Scrape asset (images and videos) from a URL
+  async scrapeAsset(url: string): Promise<ScrapedData> {
     try {
       const response: AxiosResponse<string> = await axios.get(url, {
         timeout: this.timeout,
@@ -106,22 +107,62 @@ class ScrapingService {
     return videos;
   }
 
-  // Scrape multiple URLs
+  // Scrape multiple URLs and save to database
   async scrapeMultipleUrls(urls: string[]): Promise<ScrapeResult[]> {
     const results: ScrapeResult[] = [];
     
     for (const url of urls) {
       try {
-        const mediaData = await this.scrapeMedia(url);
+        const assetData = await this.scrapeAsset(url);
         
-        // Validate and structure the data
+        // Extract page title and description
+        const pageTitle = await this.extractPageTitle(url);
+        const pageDescription = await this.extractPageDescription(url);
+        
+        // Save scraped page to database
+        const scrapedPage = await databaseService.createScrapedPage({
+          url,
+          title: pageTitle || '',
+          description: pageDescription || '',
+          success: true
+        });
+        
+        // Prepare assets for database
+        const assetsToSave = [];
+        
+        // Add images
+        for (const image of assetData.images) {
+          assetsToSave.push({
+            asset_url: image.url,
+            asset_type: 'image',
+            alt_text: image.alt,
+            scraped_page_id: scrapedPage.id
+          });
+        }
+        
+        // Add videos
+        for (const video of assetData.videos) {
+          assetsToSave.push({
+            asset_url: video.url,
+            asset_type: 'video',
+            alt_text: video.poster ? `Video poster: ${video.poster}` : null,
+            scraped_page_id: scrapedPage.id
+          });
+        }
+        
+        // Save assets to database
+        if (assetsToSave.length > 0) {
+          await databaseService.createScrapedAssets(assetsToSave as { asset_url: string; asset_type: string; alt_text?: string; scraped_page_id: number }[]);
+        }
+        
+        // Validate and structure the data for response
         const validatedData: ScrapedData = {
-          images: mediaData.images.map((img: ImageData) => ({
+          images: assetData.images.map((img: ImageData) => ({
             url: img.url,
             alt: img.alt || '',
             title: img.title || ''
           })),
-          videos: mediaData.videos.map((vid: VideoData) => ({
+          videos: assetData.videos.map((vid: VideoData) => ({
             url: vid.url,
             poster: vid.poster || null,
             type: vid.type || 'video/mp4'
@@ -133,7 +174,19 @@ class ScrapingService {
           success: true,
           data: validatedData
         });
+        
       } catch (error: any) {
+        // Save failed scraping attempt to database
+        try {
+          await databaseService.createScrapedPage({
+            url,
+            success: false,
+            error_message: error.message
+          });
+        } catch (dbError) {
+          console.error('Failed to save failed scraping to database:', dbError);
+        }
+        
         results.push({
           url,
           success: false,
@@ -143,6 +196,49 @@ class ScrapingService {
     }
     
     return results;
+  }
+
+  // Extract page title
+  private async extractPageTitle(url: string): Promise<string | undefined> {
+    try {
+      const response: AxiosResponse<string> = await axios.get(url, {
+        timeout: this.timeout,
+        headers: {
+          'User-Agent': this.userAgent
+        }
+      });
+      
+      const $ = cheerio.load(response.data);
+      return $('title').text() || undefined;
+    } catch (error) {
+      return undefined;
+    }
+  }
+
+  // Extract page description
+  private async extractPageDescription(url: string): Promise<string | undefined> {
+    try {
+      const response: AxiosResponse<string> = await axios.get(url, {
+        timeout: this.timeout,
+        headers: {
+          'User-Agent': this.userAgent
+        }
+      });
+      
+      const $ = cheerio.load(response.data);
+      
+      // Try meta description first
+      let description = $('meta[name="description"]').attr('content');
+      
+      // If no meta description, try to get first paragraph
+      if (!description) {
+        description = $('p').first().text().substring(0, 200);
+      }
+      
+      return description || undefined;
+    } catch (error) {
+      return undefined;
+    }
   }
 }
 

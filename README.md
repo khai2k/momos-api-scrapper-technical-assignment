@@ -54,7 +54,7 @@ This project follows senior-level best practices with:
 - ✅ **Security**: Helmet security headers, CORS configuration
 - ✅ **Configuration**: Environment-based configuration management
 - ✅ **Graceful Shutdown**: Proper server shutdown handling
-- ✅ **Media Scraping**: Images, videos, and iframe content extraction
+- ✅ **Asset Scraping**: Images, videos, and iframe content extraction
 - ✅ **Response Validation**: Ensures API responses match expected schemas
 
 ## Setup
@@ -88,7 +88,7 @@ GET /api/health
 ```
 Returns detailed server status and system information.
 
-### Scrape Media
+### Scrape Asset
 ```
 POST /api/scrape
 ```
