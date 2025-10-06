@@ -75,7 +75,8 @@ app.get('/', (req: Request, res: Response) => {
     endpoints: {
       health: 'GET /api/health',
       scrape: 'POST /api/scrape',
-      assets: 'GET /api/assets'
+      assets: 'GET /api/assets',
+      pages: 'GET /api/pages'
     },
     documentation: 'See README.md for usage instructions'
   });
@@ -99,7 +100,8 @@ const startServer = async () => {
         endpoints: {
           health: `http://localhost:${config.port}/api/health`,
           scrape: `http://localhost:${config.port}/api/scrape`,
-          assets: `http://localhost:${config.port}/api/assets`
+          assets: `http://localhost:${config.port}/api/assets`,
+          pages: `http://localhost:${config.port}/api/pages`
         }
       });
     });

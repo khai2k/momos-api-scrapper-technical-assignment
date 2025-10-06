@@ -7,6 +7,6 @@ import { scrapeRequestSchema } from '../validators/schemas';
 const router = Router();
 
 // POST /scrape - Scrape asset from URLs
-router.post('/', basicAuth, validateRequest(scrapeRequestSchema), scrapeAsset);
+router.post('/', validateRequest(scrapeRequestSchema), scrapeAsset);
 
 export default router;

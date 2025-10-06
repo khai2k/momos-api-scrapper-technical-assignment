@@ -27,6 +27,6 @@ export class ScrapedPage {
   @UpdateDateColumn()
   updated_at!: Date;
 
-  @OneToMany(() => ScrapedAsset, asset => asset as ScrapedAsset, { cascade: true })
+  @OneToMany(() => ScrapedAsset, asset => asset.scrapedPage)
   assets!: ScrapedAsset[];
 }

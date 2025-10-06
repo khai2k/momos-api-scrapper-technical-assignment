@@ -98,15 +98,15 @@ export class DatabaseService {
       queryBuilder.andWhere('asset.asset_type = :type', { type });
     }
 
-    if (scrapedPageId) {
-      queryBuilder.andWhere('asset.scraped_page_id = :scrapedPageId', { scrapedPageId });
-    }
-
     if (search) {
       queryBuilder.andWhere(
         '(asset.alt_text ILIKE :search OR asset.asset_url ILIKE :search OR page.url ILIKE :search)',
         { search: `%${search}%` }
       );
+    }
+
+    if (scrapedPageId) {
+      queryBuilder.andWhere('asset.scraped_page_id = :scrapedPageId', { scrapedPageId });
     }
 
     // Apply sorting
@@ -228,6 +228,74 @@ export class DatabaseService {
     const [assets, total] = await queryBuilder.getManyAndCount();
 
     return { assets, total };
+  }
+
+  // Get pages with pagination and filtering
+  async getPagesWithPagination(options: {
+    page: number;
+    limit: number;
+    search?: string;
+    success?: boolean;
+    sortBy?: string;
+    sortOrder?: 'ASC' | 'DESC';
+  }): Promise<{ pages: ScrapedPage[]; total: number }> {
+    const { page, limit, search, success, sortBy = 'created_at', sortOrder = 'DESC' } = options;
+    const skip = (page - 1) * limit;
+
+    const queryBuilder = this.scrapedPageRepository
+      .createQueryBuilder('page')
+      .leftJoinAndSelect('page.assets', 'assets')
+      .skip(skip)
+      .take(limit);
+
+    // Apply filters
+    if (success !== undefined) {
+      queryBuilder.andWhere('page.success = :success', { success });
+    }
+
+    if (search) {
+      queryBuilder.andWhere(
+        '(page.url ILIKE :search OR page.title ILIKE :search OR page.description ILIKE :search)',
+        { search: `%${search}%` }
+      );
+    }
+
+    // Apply sorting
+    queryBuilder.orderBy(`page.${sortBy}`, sortOrder);
+
+    const [pages, total] = await queryBuilder.getManyAndCount();
+
+    return { pages, total };
+  }
+
+  // Get pages statistics
+  async getPagesStatistics(): Promise<{
+    totalPages: number;
+    successfulPages: number;
+    failedPages: number;
+    totalAssets: number;
+    recentPages: ScrapedPage[];
+  }> {
+    const [totalPages, successfulPages, failedPages, totalAssets] = await Promise.all([
+      this.scrapedPageRepository.count(),
+      this.scrapedPageRepository.count({ where: { success: true } }),
+      this.scrapedPageRepository.count({ where: { success: false } }),
+      this.scrapedAssetRepository.count()
+    ]);
+
+    const recentPages = await this.scrapedPageRepository.find({
+      relations: ['assets'],
+      order: { created_at: 'DESC' },
+      take: 5
+    });
+
+    return {
+      totalPages,
+      successfulPages,
+      failedPages,
+      totalAssets,
+      recentPages
+    };
   }
 }
 

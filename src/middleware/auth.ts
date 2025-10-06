@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 
 // Basic Authentication Middleware
 export const basicAuth = (req: Request, res: Response, next: NextFunction): void => {
+
   const authHeader = req.headers.authorization;
   
   if (!authHeader || !authHeader.startsWith('Basic ')) {
