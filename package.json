@@ -10,6 +10,10 @@
     "build:watch": "tsc --watch",
     "clean": "rimraf dist",
     "test:scraping": "node test-scraping.js",
+    "docker:up": "docker-compose up --build",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f",
+    "docker:migrate": "docker-compose exec api npm run migration:run",
     "typeorm": "typeorm-ts-node-commonjs",
     "migration:generate": "npm run typeorm -- migration:generate -d src/database/data-source.ts",
     "migration:run": "npm run typeorm -- migration:run -d src/database/data-source.ts",
@@ -46,7 +50,8 @@
     "images",
     "videos",
     "typeorm",
-    "postgresql"
+    "postgresql",
+    "docker"
   ],
   "author": "",
   "license": "MIT"
