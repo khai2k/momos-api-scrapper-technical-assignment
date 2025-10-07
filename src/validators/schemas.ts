@@ -32,5 +32,11 @@ export const scrapeResultSchema = z.object({
 
 export const scrapeResponseSchema = z.object({
   success: z.boolean(),
-  results: z.array(scrapeResultSchema)
+  results: z.array(scrapeResultSchema),
+  cacheStats: z.object({
+    totalRequests: z.number(),
+    cachedRequests: z.number(),
+    freshRequests: z.number(),
+    cacheHitRate: z.number()
+  }).optional()
 });

@@ -2,15 +2,62 @@ import axios, { AxiosResponse } from 'axios';
 import * as cheerio from 'cheerio';
 import { ImageData, VideoData, ScrapedData, ScrapeResult } from '../types';
 import { databaseService } from './databaseService';
+import config from '../config';
 
 // Scraping service for extracting asset from web pages
 class ScrapingService {
   private timeout: number;
   private userAgent: string;
+  private cacheValidityDays: number;
 
   constructor() {
-    this.timeout = 10000;
-    this.userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36';
+    this.timeout = config.scraping.timeout;
+    this.userAgent = config.scraping.userAgent;
+    this.cacheValidityDays = config.scraping.cacheValidityDays;
+  }
+
+  // Check if page was scraped recently and return cached data
+  private async getCachedData(url: string): Promise<ScrapedData | null> {
+    try {
+      const existingPage = await databaseService.getScrapedPageByUrl(url);
+      
+      if (!existingPage || !existingPage.success) {
+        return null;
+      }
+      
+      // Check if the page was scraped within the configured cache validity period
+      const cacheValidityDate = new Date();
+      cacheValidityDate.setDate(cacheValidityDate.getDate() - this.cacheValidityDays);
+      
+      if (existingPage.created_at < cacheValidityDate) {
+        return null; // Data is too old, need to re-scrape
+      }
+      
+      // Return cached data
+      const cachedData: ScrapedData = {
+        images: existingPage.assets
+          .filter(asset => asset.asset_type === 'image')
+          .map(asset => ({
+            url: asset.asset_url,
+            alt: asset.alt_text || '',
+            title: '' // We don't store title for assets in current schema
+          })),
+        videos: existingPage.assets
+          .filter(asset => asset.asset_type === 'video')
+          .map(asset => ({
+            url: asset.asset_url,
+            poster: asset.alt_text?.startsWith('Video poster: ') 
+              ? asset.alt_text.replace('Video poster: ', '') 
+              : null,
+            type: 'video/mp4' // Default type
+          }))
+      };
+      
+      return cachedData;
+    } catch (error) {
+      console.error('Error checking cached data:', error);
+      return null;
+    }
   }
 
   // Scrape asset (images and videos) from a URL
@@ -107,12 +154,29 @@ class ScrapingService {
     return videos;
   }
 
-  // Scrape multiple URLs and save to database
+  // Scrape multiple URLs and save to database (with caching)
   async scrapeMultipleUrls(urls: string[]): Promise<ScrapeResult[]> {
     const results: ScrapeResult[] = [];
     
     for (const url of urls) {
       try {
+        // Check for cached data first
+        const cachedData = await this.getCachedData(url);
+        
+        if (cachedData) {
+          // Return cached data without re-scraping
+          console.log(`📦 Using cached data for: ${url} (valid for ${this.cacheValidityDays} days)`);
+          results.push({
+            url,
+            success: true,
+            data: cachedData,
+            cached: true // Flag to indicate this is cached data
+          });
+          continue;
+        }
+        
+        // No cached data or data is too old, proceed with scraping
+        console.log(`🔄 Scraping fresh data for: ${url} (cache expired after ${this.cacheValidityDays} days)`);
         const assetData = await this.scrapeAsset(url);
         
         // Extract page title and description
@@ -172,7 +236,8 @@ class ScrapingService {
         results.push({
           url,
           success: true,
-          data: validatedData
+          data: validatedData,
+          cached: false // Flag to indicate this is fresh data
         });
         
       } catch (error: any) {
@@ -190,7 +255,8 @@ class ScrapingService {
         results.push({
           url,
           success: false,
-          error: error.message
+          error: error.message,
+          cached: false
         });
       }
     }
@@ -238,6 +304,57 @@ class ScrapingService {
       return description || undefined;
     } catch (error) {
       return undefined;
+    }
+  }
+
+  // Method to clear cache for a specific URL (useful for testing)
+  async clearCacheForUrl(url: string): Promise<boolean> {
+    try {
+      const existingPage = await databaseService.getScrapedPageByUrl(url);
+      if (existingPage) {
+        await databaseService.deleteScrapedPage(existingPage.id);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Error clearing cache:', error);
+      return false;
+    }
+  }
+
+  // Method to get cache statistics
+  async getCacheStats(): Promise<{
+    totalPages: number;
+    cachedPages: number;
+    freshPages: number;
+    cacheHitRate: number;
+    cacheValidityDays: number;
+  }> {
+    try {
+      const cacheValidityDate = new Date();
+      cacheValidityDate.setDate(cacheValidityDate.getDate() - this.cacheValidityDays);
+      
+      const allPages = await databaseService.getAllScrapedPages();
+      const cachedPages = allPages.filter(page => 
+        page.success && page.created_at >= cacheValidityDate
+      );
+      
+      return {
+        totalPages: allPages.length,
+        cachedPages: cachedPages.length,
+        freshPages: allPages.length - cachedPages.length,
+        cacheHitRate: allPages.length > 0 ? (cachedPages.length / allPages.length) * 100 : 0,
+        cacheValidityDays: this.cacheValidityDays
+      };
+    } catch (error) {
+      console.error('Error getting cache stats:', error);
+      return {
+        totalPages: 0,
+        cachedPages: 0,
+        freshPages: 0,
+        cacheHitRate: 0,
+        cacheValidityDays: this.cacheValidityDays
+      };
     }
   }
 }

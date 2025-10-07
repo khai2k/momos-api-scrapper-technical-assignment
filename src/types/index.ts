@@ -22,11 +22,18 @@ export interface ScrapeResult {
   success: boolean;
   data?: ScrapedData;
   error?: string;
+  cached?: boolean; // Flag to indicate if data was served from cache
 }
 
 export interface ScrapeResponse {
   success: boolean;
   results: ScrapeResult[];
+  cacheStats?: {
+    totalRequests: number;
+    cachedRequests: number;
+    freshRequests: number;
+    cacheHitRate: number;
+  };
 }
 
 export interface ScrapeRequest {
@@ -44,6 +51,7 @@ export interface Config {
     timeout: number;
     maxUrls: number;
     userAgent: string;
+    cacheValidityDays: number;
   };
   cors: {
     origin: string;

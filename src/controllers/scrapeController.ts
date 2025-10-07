@@ -10,9 +10,21 @@ export const scrapeAsset = async (req: Request, res: Response, next: NextFunctio
     const { urls } = req.body;
     const results = await scrapingService.scrapeMultipleUrls(urls);
     
+    // Calculate cache statistics
+    const totalRequests = results.length;
+    const cachedRequests = results.filter(r => r.cached === true).length;
+    const freshRequests = results.filter(r => r.cached === false).length;
+    const cacheHitRate = totalRequests > 0 ? (cachedRequests / totalRequests) * 100 : 0;
+    
     const response: ScrapeResponse = {
       success: true,
-      results
+      results,
+      cacheStats: {
+        totalRequests,
+        cachedRequests,
+        freshRequests,
+        cacheHitRate: parseFloat(cacheHitRate.toFixed(2))
+      }
     };
     
     // Validate response structure
