@@ -19,6 +19,20 @@ const config: Config = {
     cacheValidityDays: parseInt(process.env.CACHE_VALIDITY_DAYS || '7')
   },
   
+  // Redis configuration
+  redis: {
+    host: process.env.REDIS_HOST || 'localhost',
+    port: parseInt(process.env.REDIS_PORT || '6379'),
+    password: process.env.REDIS_PASSWORD || undefined
+  },
+  
+  // Queue configuration
+  queue: {
+    concurrency: parseInt(process.env.QUEUE_CONCURRENCY || '5'),
+    removeOnComplete: parseInt(process.env.QUEUE_REMOVE_ON_COMPLETE || '100'),
+    removeOnFail: parseInt(process.env.QUEUE_REMOVE_ON_FAIL || '50')
+  },
+  
   // CORS configuration
   cors: {
     origin: process.env.CORS_ORIGIN || '*',

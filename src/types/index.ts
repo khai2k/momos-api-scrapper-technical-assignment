@@ -25,6 +25,17 @@ export interface ScrapeResult {
   cached?: boolean; // Flag to indicate if data was served from cache
 }
 
+export interface AsyncScrapeResult {
+  jobId: string;
+  status: 'queued' | 'processing' | 'completed' | 'failed';
+  urls: string[];
+  message: string;
+  results?: ScrapeResult[];
+  error?: string;
+  createdAt: Date;
+  completedAt?: Date;
+}
+
 export interface ScrapeResponse {
   success: boolean;
   results: ScrapeResult[];
@@ -52,6 +63,16 @@ export interface Config {
     maxUrls: number;
     userAgent: string;
     cacheValidityDays: number;
+  };
+  redis: {
+    host: string;
+    port: number;
+    password?: string | undefined;
+  };
+  queue: {
+    concurrency: number;
+    removeOnComplete: number;
+    removeOnFail: number;
   };
   cors: {
     origin: string;

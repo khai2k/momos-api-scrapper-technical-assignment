@@ -10,6 +10,9 @@ import logger from './src/utils/logger';
 // Import database
 import { initializeDatabase, closeDatabase } from './src/database';
 
+// Import queue service
+import queueService from './src/services/queueService';
+
 // Import middleware
 import { errorHandler, notFoundHandler } from './src/middleware/errorHandler';
 
@@ -75,6 +78,7 @@ app.get('/', (req: Request, res: Response) => {
     endpoints: {
       health: 'GET /api/health',
       scrape: 'POST /api/scrape',
+      scrapeV2: 'POST /api/scrape/v2',
       assets: 'GET /api/assets',
       pages: 'GET /api/pages'
     },
@@ -100,6 +104,7 @@ const startServer = async () => {
         endpoints: {
           health: `http://localhost:${config.port}/api/health`,
           scrape: `http://localhost:${config.port}/api/scrape`,
+          scrapeV2: `http://localhost:${config.port}/api/scrape/v2`,
           assets: `http://localhost:${config.port}/api/assets`,
           pages: `http://localhost:${config.port}/api/pages`
         }
@@ -111,11 +116,12 @@ const startServer = async () => {
       logger.info('Shutting down gracefully...');
       server.close(async () => {
         try {
+          await queueService.shutdown();
           await closeDatabase();
-          logger.info('Database connection closed');
+          logger.info('Queue and database connections closed');
           process.exit(0);
         } catch (error) {
-          logger.error('Error closing database connection:', error as Record<string, any>);
+          logger.error('Error closing connections:', error as Record<string, any>);
           process.exit(1);
         }
       });

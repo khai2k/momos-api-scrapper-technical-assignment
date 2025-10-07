@@ -19,6 +19,20 @@ services:
       timeout: 5s
       retries: 5
 
+  # Redis Cache & Queue
+  redis:
+    image: redis:7-alpine
+    container_name: web-scraper-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   # Web Scraper API
   api:
     build: .
@@ -47,13 +61,26 @@ services:
       USER_AGENT: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36
       CACHE_VALIDITY_DAYS: 7
       
+      # Redis configuration
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ""
+      
+      # Queue configuration
+      QUEUE_CONCURRENCY: 5
+      QUEUE_REMOVE_ON_COMPLETE: 100
+      QUEUE_REMOVE_ON_FAIL: 50
+      
       # CORS configuration
       CORS_ORIGIN: "*"
       CORS_CREDENTIALS: "false"
     depends_on:
       postgres:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     restart: unless-stopped
 
 volumes:
   postgres_data:
+  redis_data:
