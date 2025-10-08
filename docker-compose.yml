@@ -74,6 +74,14 @@ services:
       # CORS configuration
       CORS_ORIGIN: "*"
       CORS_CREDENTIALS: "false"
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
     depends_on:
       postgres:
         condition: service_healthy
