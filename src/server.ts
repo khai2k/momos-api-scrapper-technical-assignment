@@ -4,20 +4,20 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 
 // Import configuration and utilities
-import config from './src/config';
-import logger from './src/utils/logger';
+import config from './config';
+import logger from './utils/logger';
 
 // Import database
-import { initializeDatabase, closeDatabase } from './src/database';
+import { initializeDatabase, closeDatabase } from './database';
 
 // Import queue service
-import queueService from './src/services/queueService';
+import queueService from './services/queueService';
 
 // Import middleware
-import { errorHandler, notFoundHandler } from './src/middleware/errorHandler';
+import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 
 // Import routes
-import routes from './src/routes';
+import routes from './routes';
 
 /**
  * Express Application Setup
