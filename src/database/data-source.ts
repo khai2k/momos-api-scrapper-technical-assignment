@@ -14,8 +14,8 @@ export const AppDataSource = new DataSource({
   synchronize: process.env.NODE_ENV === 'development',
   logging: process.env.NODE_ENV === 'development',
   entities: [ScrapedPage, ScrapedAsset],
-  migrations: ['src/database/migrations/*.ts'],
-  subscribers: ['src/database/subscribers/*.ts'],
+  migrations: [__dirname + '/migrations/*.js'],
+  subscribers: [],
   migrationsTableName: 'migrations',
   migrationsRun: false,
 });
