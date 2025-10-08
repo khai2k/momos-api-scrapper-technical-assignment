@@ -1,107 +1,120 @@
 # Web Scraper API
 
-A professional Express.js API with clean architecture that scrapes images and video URLs from web pages.
+A high-performance Express.js API for scraping images and videos from web URLs with caching, queue management, and load balancing capabilities.
 
-## 🏗️ Architecture
-
-This project follows senior-level best practices with:
-
-- **Clean Architecture**: Separation of concerns with controllers, services, middleware, and utilities
-- **Modular Structure**: Each component has a single responsibility
-- **Configuration Management**: Environment-based configuration
-- **Error Handling**: Comprehensive error handling with proper logging
-- **Security**: Helmet, CORS, and authentication middleware
-- **Logging**: Structured logging with request/response tracking
-
-## 📁 Project Structure
+## Architecture Overview
 
 ```
-├── src/
-│   ├── config/
-│   │   └── index.js          # Configuration management
-│   ├── controllers/
-│   │   ├── index.js         # Controller exports
-│   │   ├── healthController.js # Health check controller
-│   │   └── scrapeController.js # Scraping controller
-│   ├── middleware/
-│   │   ├── index.js         # Middleware exports
-│   │   ├── auth.js          # Authentication middleware
-│   │   └── errorHandler.js  # Error handling middleware
-│   ├── routes/
-│   │   ├── index.js         # Route definitions
-│   │   ├── healthRoutes.js  # Health routes
-│   │   └── scrapeRoutes.js  # Scraping routes
-│   ├── services/
-│   │   └── scrapingService.js # Business logic
-│   ├── utils/
-│   │   └── logger.js        # Logging utility
-│   └── validators/
-│       ├── schemas.js       # Zod validation schemas
-│       └── validationMiddleware.js # Validation middleware
-├── server.js                # Main application entry point
-├── package.json
-└── README.md
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Client        │    │   Express API   │    │   PostgreSQL    │
+│   (Load Test)   │◄──►│   (Node.js)     │◄──►│   Database      │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+                              │
+                              ▼
+                       ┌─────────────────┐
+                       │   Redis Cache   │
+                       │   & Queue       │
+                       └─────────────────┘
 ```
 
-## 🚀 Features
+**Key Components:**
+- **Express.js API**: RESTful endpoints with authentication
+- **PostgreSQL**: Persistent storage for scraped data
+- **Redis**: Caching layer and job queue management
+- **BullMQ**: Background job processing for async scraping
+- **Cheerio**: HTML parsing and content extraction
 
-- ✅ **Clean Architecture**: Modular, maintainable code structure
-- ✅ **Type-Safe Validation**: Zod schemas for request/response validation
-- ✅ **Authentication**: Basic Auth middleware with configurable credentials
-- ✅ **Validation**: Comprehensive request validation with detailed error messages
-- ✅ **Error Handling**: Comprehensive error handling with proper HTTP status codes
-- ✅ **Logging**: Structured logging with request/response tracking
-- ✅ **Security**: Helmet security headers, CORS configuration
-- ✅ **Configuration**: Environment-based configuration management
-- ✅ **Graceful Shutdown**: Proper server shutdown handling
-- ✅ **Asset Scraping**: Images, videos, and iframe content extraction
-- ✅ **Response Validation**: Ensures API responses match expected schemas
+## Prerequisites
 
-## Setup
+- **Node.js** 18+ 
+- **Docker** & **Docker Compose** (for containerized setup)
+- **PostgreSQL** 15+ (for local development)
+- **Redis** 7+ (for local development)
 
-1. Install dependencies:
+## Quick Start
+
+### Using Docker Compose (Recommended)
+
 ```bash
+# Clone and start all services
+git clone <repository-url>
+cd momos-assignment
+docker-compose up --build
+
+# The API will be available at http://localhost:3000
+```
+
+### Local Development
+
+```bash
+# Install dependencies
 npm install
-```
 
-2. Start the server:
-```bash
-npm start
-```
+# Start PostgreSQL and Redis (using Docker)
+docker-compose up postgres redis -d
 
-For development with auto-restart:
-```bash
+# Run database migrations
+npm run migration:run
+
+# Start development server
 npm run dev
+
+# The API will be available at http://localhost:3000
 ```
 
-## 📡 API Endpoints
+## Project Structure
 
-### Root Endpoint
 ```
-GET /
+src/
+├── config/           # Application configuration
+├── controllers/      # Request handlers
+│   ├── assetsController.ts
+│   ├── healthController.ts
+│   ├── pagesController.ts
+│   ├── scrapeController.ts
+│   └── scrapeV2Controller.ts
+├── database/         # Database setup and entities
+│   ├── entities/
+│   └── migrations/
+├── middleware/       # Express middleware
+├── routes/          # API route definitions
+├── services/        # Business logic
+│   ├── databaseService.ts
+│   ├── queueService.ts
+│   └── scrapingService.ts
+├── types/           # TypeScript type definitions
+├── utils/           # Utility functions
+└── validators/      # Request/response validation
 ```
-Returns API information and available endpoints.
 
-### Health Check
+## API Documentation
+
+### Base URL
 ```
+http://localhost:3000/api
+```
+
+### Authentication
+All endpoints require Basic Authentication:
+- Username: `admin` (default)
+- Password: `password` (default)
+
+### Endpoints
+
+#### Health Check
+```http
 GET /api/health
 ```
-Returns detailed server status and system information.
+Returns API status and system information.
 
-### Scrape Asset
-```
+#### Scrape Assets (Synchronous)
+```http
 POST /api/scrape
-```
+Content-Type: application/json
+Authorization: Basic <base64-encoded-credentials>
 
-**Authentication:** Basic Auth (username: `admin`, password: `password`)
-
-**Request Body:**
-```json
 {
-  "urls": [
-    "https://example.com",
-    "https://another-site.com"
-  ]
+  "urls": ["https://example.com", "https://another-site.com"]
 }
 ```
 
@@ -109,178 +122,114 @@ POST /api/scrape
 ```json
 {
   "success": true,
-  "totalUrls": 2,
-  "successfulScrapes": 2,
-  "failedScrapes": 0,
   "results": [
     {
       "url": "https://example.com",
-      "success": true,
-      "data": {
-        "images": [
-          {
-            "url": "https://example.com/image.jpg",
-            "alt": "Image description",
-            "title": "Image title",
-            "width": "800",
-            "height": "600"
-          }
-        ],
-        "videos": [
-          {
-            "url": "https://example.com/video.mp4",
-            "poster": "https://example.com/poster.jpg",
-            "type": "video/mp4",
-            "width": "1920",
-            "height": "1080"
-          }
-        ]
-      }
+      "assets": [
+        {
+          "type": "image",
+          "url": "https://example.com/image.jpg",
+          "alt": "Image description"
+        }
+      ],
+      "cached": false
     }
-  ]
+  ],
+  "cacheStats": {
+    "totalRequests": 2,
+    "cachedRequests": 0,
+    "freshRequests": 2,
+    "cacheHitRate": 0
+  }
 }
 ```
 
-## Usage Examples
+#### Scrape Assets (Asynchronous)
+```http
+POST /api/scrape/v2
+Content-Type: application/json
+Authorization: Basic <base64-encoded-credentials>
 
-### Using curl:
-```bash
-curl -X POST http://localhost:3000/api/scrape \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Basic YWRtaW46cGFzc3dvcmQ=" \
-  -d '{"urls": ["https://example.com"]}'
+{
+  "urls": ["https://example.com"]
+}
 ```
 
-### Using JavaScript fetch:
-```javascript
-const response = await fetch('http://localhost:3000/api/scrape', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-    'Authorization': 'Basic ' + btoa('admin:password')
-  },
-  body: JSON.stringify({
-    urls: ['https://example.com']
-  })
-});
-
-const data = await response.json();
-console.log(data);
-```
-
-### Using axios:
-```javascript
-const axios = require('axios');
-
-const response = await axios.post('http://localhost:3000/api/scrape', {
-  urls: ['https://example.com']
-}, {
-  headers: {
-    'Authorization': 'Basic ' + Buffer.from('admin:password').toString('base64')
-  }
-});
-
-console.log(response.data);
-```
-
-## ⚙️ Configuration
-
-All configuration is managed through environment variables:
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `PORT` | 3000 | Server port |
-| `NODE_ENV` | development | Environment mode |
-| `AUTH_USERNAME` | admin | Basic auth username |
-| `AUTH_PASSWORD` | password | Basic auth password |
-| `SCRAPING_TIMEOUT` | 10000 | Request timeout in ms |
-| `MAX_URLS` | 10 | Maximum URLs per request |
-| `USER_AGENT` | Mozilla/5.0... | User agent for requests |
-| `CORS_ORIGIN` | * | CORS origin |
-| `CORS_CREDENTIALS` | false | CORS credentials |
-
-## Validation Features
-
-The API uses Zod for comprehensive validation:
-
-- **Request Validation**: Validates incoming requests against schemas
-- **Response Validation**: Ensures API responses match expected formats
-- **Type Safety**: Runtime type checking for all data
-- **Detailed Error Messages**: Clear validation error messages with field-level details
-- **URL Validation**: Validates URL format and accessibility
-- **Array Validation**: Ensures proper array structure and limits
-
-### Validation Error Response Example:
+**Response:**
 ```json
 {
-  "error": "Validation Error",
-  "message": "Invalid request data",
-  "details": [
-    {
-      "field": "urls.0",
-      "message": "Invalid URL format",
-      "code": "invalid_string"
-    }
-  ]
+  "success": true,
+  "message": "Scraping job queued successfully",
+  "data": {
+    "jobId": "job_123",
+    "status": "waiting",
+    "urls": ["https://example.com"]
+  }
 }
 ```
 
-## Error Handling
+#### Get Job Status
+```http
+GET /api/scrape/v2/status/{jobId}
+Authorization: Basic <base64-encoded-credentials>
+```
 
-The API handles various error scenarios:
-- Invalid URLs
-- Network timeouts
-- Connection refused
-- Authentication failures
-- Malformed requests
-- **Validation errors** with detailed field-level information
+#### Get All Assets
+```http
+GET /api/assets?page=1&limit=10
+Authorization: Basic <base64-encoded-credentials>
+```
 
-## 🔒 Security Features
+#### Get All Pages
+```http
+GET /api/pages?page=1&limit=10
+Authorization: Basic <base64-encoded-credentials>
+```
 
-- **Helmet**: Security headers protection
-- **CORS**: Configurable cross-origin resource sharing
-- **Authentication**: Basic Auth with configurable credentials
-- **Type-Safe Validation**: Zod schemas for comprehensive input validation
-- **Rate Limiting**: Maximum URLs per request
-- **Error Handling**: Secure error responses (no sensitive data leakage)
-- **Response Validation**: Ensures API responses are properly structured
+## Load Testing
 
-## 📊 Logging
+### Running Load Tests
 
-The application includes comprehensive logging:
+```bash
+# Test synchronous scraping (1000 requests, 50 concurrent)
+node loadtest-v1.js
 
-- **Request Logging**: All incoming requests with metadata
-- **Error Logging**: Detailed error information with stack traces
-- **Performance Logging**: Scraping operation metrics
-- **Validation Logging**: Request/response validation results
-- **Structured Logs**: JSON format for production, readable format for development
+# Test asynchronous scraping with queue
+node loadtest-v2.js
+```
 
-## 🔍 Validation Features
+### Load Test Results
 
-The API uses Zod for comprehensive validation:
+The load tests will output comprehensive metrics including:
+- **Performance**: Requests/sec, latency statistics
+- **Success Rate**: 2xx vs error responses
+- **Latency**: P50, P90, P95, P99 percentiles
+- **Throughput**: Data transfer rates
+- **Performance Grade**: A-C rating based on latency
 
-- **Request Validation**: Validates incoming requests against schemas
-- **Response Validation**: Ensures API responses match expected formats
-- **Type Safety**: Runtime type checking for all data
-- **Detailed Error Messages**: Clear validation error messages with field-level details
-- **Schema Reusability**: Reusable validation schemas across the application
+### Expected Performance
+- **Target**: 1000+ requests/sec
+- **Latency**: <500ms average
+- **Success Rate**: >95%
+- **Concurrent Users**: 50+ simultaneous connections
 
-## 🚨 Error Handling
+### Load Test Configuration
 
-The API handles various error scenarios with appropriate HTTP status codes:
+```javascript
+// loadtest-v1.js configuration
+{
+  amount: 1000,        // Total requests
+  connections: 50,      // Concurrent connections
+  pipelining: 1,        // HTTP pipelining
+  timeout: 30000        // Request timeout (ms)
+}
+```
 
-- **400 Bad Request**: Invalid URLs, malformed requests
-- **401 Unauthorized**: Missing or invalid authentication
-- **404 Not Found**: Non-existent endpoints
-- **408 Request Timeout**: Scraping timeout
-- **500 Internal Server Error**: Unexpected server errors
+---
 
-## 🏭 Production Considerations
-
-- Change default authentication credentials
-- Use environment variables for all configuration
-- Consider implementing rate limiting
-- Add monitoring and alerting
-- Implement proper logging aggregation
-- Consider using a reverse proxy (nginx)
-- Add health check endpoints for load balancers
+**Environment Variables:**
+- `DB_HOST`, `DB_PORT`, `DB_USERNAME`, `DB_PASSWORD`, `DB_NAME`
+- `REDIS_HOST`, `REDIS_PORT`, `REDIS_PASSWORD`
+- `AUTH_USERNAME`, `AUTH_PASSWORD`
+- `SCRAPING_TIMEOUT`, `MAX_URLS`, `CACHE_VALIDITY_DAYS`
+- `QUEUE_CONCURRENCY`, `CORS_ORIGIN`
