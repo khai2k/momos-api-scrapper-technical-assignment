@@ -16,9 +16,11 @@
     "typeorm": "typeorm-ts-node-commonjs",
     "migration:generate": "npm run typeorm -- migration:generate -d src/database/data-source.ts",
     "migration:run": "npm run typeorm -- migration:run -d src/database/data-source.ts",
-    "migration:revert": "npm run typeorm -- migration:revert -d src/database/data-source.ts"
+    "migration:revert": "npm run typeorm -- migration:revert -d src/database/data-source.ts",
+    "cleanup": "node cleanup-databases.js"
   },
   "dependencies": {
+    "autocannon": "^8.0.0",
     "axios": "^1.6.0",
     "bullmq": "^4.15.0",
     "cheerio": "^1.0.0-rc.12",
@@ -27,22 +29,24 @@
     "helmet": "^7.1.0",
     "ioredis": "^5.3.2",
     "morgan": "^1.10.0",
+    "node-fetch": "^3.3.2",
     "pg": "^8.11.3",
     "reflect-metadata": "^0.1.13",
+    "serpapi": "^2.2.1",
     "typeorm": "^0.3.17",
     "zod": "^4.1.11"
   },
   "devDependencies": {
-    "nodemon": "^3.0.1",
-    "typescript": "^5.3.0",
-    "@types/node": "^20.10.0",
-    "@types/express": "^4.17.21",
-    "@types/cors": "^2.8.17",
-    "@types/morgan": "^1.9.9",
     "@types/cheerio": "^0.22.35",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/morgan": "^1.9.9",
+    "@types/node": "^20.10.0",
     "@types/pg": "^8.10.9",
+    "nodemon": "^3.0.1",
+    "rimraf": "^5.0.5",
     "ts-node": "^10.9.0",
-    "rimraf": "^5.0.5"
+    "typescript": "^5.3.0"
   },
   "keywords": [
     "express",
