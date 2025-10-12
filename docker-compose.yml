@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   # PostgreSQL Database
@@ -10,7 +10,7 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     ports:
-      - "5433:5432"
+      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -46,41 +46,41 @@ services:
       DB_USERNAME: postgres
       DB_PASSWORD: postgres
       DB_NAME: web_scraper
-      
+
       # Application configuration
       NODE_ENV: production
       PORT: 3000
-      
+
       # Authentication
       AUTH_USERNAME: admin
       AUTH_PASSWORD: password
-      
+
       # Scraping configuration
       SCRAPING_TIMEOUT: 10000
       MAX_URLS: 10
       USER_AGENT: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36
       CACHE_VALIDITY_DAYS: 7
-      
+
       # Redis configuration
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PASSWORD: ""
-      
+
       # Queue configuration
       QUEUE_CONCURRENCY: 5
       QUEUE_REMOVE_ON_COMPLETE: 100
       QUEUE_REMOVE_ON_FAIL: 50
-      
+
       # CORS configuration
       CORS_ORIGIN: "*"
       CORS_CREDENTIALS: "false"
     deploy:
       resources:
         limits:
-          cpus: '1.0'
+          cpus: "1.0"
           memory: 1G
         reservations:
-          cpus: '0.5'
+          cpus: "0.5"
           memory: 512M
     depends_on:
       postgres:

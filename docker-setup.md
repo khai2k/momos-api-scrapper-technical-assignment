@@ -3,17 +3,20 @@
 ## Quick Start
 
 ### 1. Build and Start Services
+
 ```bash
 docker-compose up --build
 ```
 
 ### 2. Run Database Migrations
+
 ```bash
 # Wait for services to start, then run migrations
 docker-compose exec api npm run migration:run
 ```
 
 ### 3. Test the API
+
 ```bash
 # Health check
 curl http://localhost:3000/api/health
@@ -28,13 +31,15 @@ curl -X POST http://localhost:3000/api/scrape \
 ## Services
 
 ### PostgreSQL Database
-- **Port**: 5433 (mapped from container 5432)
+
+- **Port**: 5432
 - **Database**: web_scraper
 - **Username**: postgres
 - **Password**: postgres
 - **Data**: Persisted in `postgres_data` volume
 
 ### Web Scraper API
+
 - **Port**: 3000
 - **Authentication**: admin:password
 - **Endpoints**:
@@ -46,22 +51,26 @@ curl -X POST http://localhost:3000/api/scrape \
 ## Commands
 
 ### Start Services
+
 ```bash
 docker-compose up -d
 ```
 
 ### Stop Services
+
 ```bash
 docker-compose down
 ```
 
 ### View Logs
+
 ```bash
 docker-compose logs -f api
 docker-compose logs -f postgres
 ```
 
 ### Run Commands in API Container
+
 ```bash
 # Run migrations
 docker-compose exec api npm run migration:run
@@ -74,12 +83,13 @@ docker-compose exec api sh
 ```
 
 ### Database Access
+
 ```bash
 # Connect to PostgreSQL
 docker-compose exec postgres psql -U postgres -d web_scraper
 
 # Or from host machine
-psql -h localhost -p 5433 -U postgres -d web_scraper
+psql -h localhost -p 5432 -U postgres -d web_scraper
 ```
 
 ## Environment Variables
@@ -98,6 +108,7 @@ All configuration is handled through environment variables in `docker-compose.ym
 ## Troubleshooting
 
 ### Database Connection Issues
+
 ```bash
 # Check if PostgreSQL is running
 docker-compose ps postgres
@@ -107,6 +118,7 @@ docker-compose logs postgres
 ```
 
 ### API Issues
+
 ```bash
 # Check API logs
 docker-compose logs api
@@ -116,6 +128,7 @@ docker-compose restart api
 ```
 
 ### Reset Everything
+
 ```bash
 # Stop and remove everything
 docker-compose down -v

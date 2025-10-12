@@ -61,8 +61,8 @@ async function pollJobCompletion() {
 const instance = autocannon({
   url: "http://localhost:3000/api/scrape/v2",
   method: "POST",
-  amount:100,          // total requests
-  connections: 2,       // simulate 200 concurrent clients
+  amount:5000,          // total requests
+  connections: 100,       // simulate 100 concurrent clients
   pipelining: 1,
   headers: {
     "Content-Type": "application/json",

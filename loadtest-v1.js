@@ -22,8 +22,8 @@ function getNextUrl() {
 const instance = autocannon({
   url: "http://localhost:3000/api/scrape",
   method: "POST",
-  amount:1000,          // total requests
-  connections: 50,       // simulate 50 concurrent clients
+  amount:5000,          // total requests
+  connections: 100,       // simulate 50 concurrent clients
   pipelining: 1,
   headers: {
     "Content-Type": "application/json",
