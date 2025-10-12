@@ -3,19 +3,11 @@
 A high-performance Express.js API for scraping images and videos from web URLs with caching, queue management, and load balancing capabilities.
 
 ## Architecture Overview
+### Scrape V1 - Synchronous Architecture
+![Scrape V1 Architecture](Scrape-v1.png)
 
-```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Client        │    │   Express API   │    │   PostgreSQL    │
-│   (Load Test)   │◄──►│   (Node.js)     │◄──►│   Database      │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-                              │
-                              ▼
-                       ┌─────────────────┐
-                       │   Redis Cache   │
-                       │   & Queue       │
-                       └─────────────────┘
-```
+### Scrape V2 - Asynchronous Architecture  
+![Scrape V2 Architecture](Scrape-v2.png)
 
 **Key Components:**
 - **Express.js API**: RESTful endpoints with authentication
